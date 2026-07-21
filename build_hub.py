@@ -54,7 +54,7 @@ ITEMS = [
         tags="메타 페이스북 광고 fb ads 대시보드 kpi cpc ctr 광고비",
     ),
     dict(
-        cat="growth", kind="pc", status="live",
+        cat="growth", kind="pc", status="empty",
         title="광고 일지",
         purpose="캠페인마다 맥락 → 세팅·가설 → 결과 → 다음 광고 준비를 사슬로 기록. 실데이터와 자동 매칭돼 목표 달성 여부를 채점.",
         url="http://localhost:8899/log.html",
@@ -169,7 +169,7 @@ ITEMS = [
     ),
     # ── 업무관리 ──────────────────────────────────────────
     dict(
-        cat="work", kind="web", status="live",
+        cat="work", kind="web", status="empty",
         title="지운 업무일지",
         purpose="칸반 보드·오늘 회고·주간 회고·AI 인사이트를 한 곳에서. 기기 간 자동 동기화되고 마크다운으로 내보낼 수 있음.",
         url="https://company-dari.github.io/jiwoon-worklog/",
@@ -243,9 +243,38 @@ ITEMS = [
     ),
 ]
 
+# ─────────────────────────────────────────────────────────────
+# 마지막으로 움직인 날 + 실제 상태. 2026-07-21 실측(git 커밋일·파일 수정시각·자동화 로그).
+# last="" 이면 '상시'(우리가 만든 게 아니라 계속 쓰는 외부 서비스).
+LAST = {
+    "네이버 Growth 대시보드":       ("2026-07-21", "오늘도 손보는 중 · 데이터는 7/20까지 들어와 있음"),
+    "메타 광고 대시보드":            ("2026-07-21", "데이터 7/20까지 · 매일 08시 자동수집은 아직 한 번도 안 돌았음(오늘 것도 수동 실행)"),
+    "광고 일지":                     ("2026-07-16", "만든 뒤 기록 0건 — 아직 한 번도 안 씀"),
+    "UTM·광고명 생성기":             ("2026-07-17", "7/17 사용"),
+    "발주 취합 대시보드":            ("2026-07-21", "주문 자동수집은 오늘 09:55 정상 · 화면은 6/26 이후 안 열어봄"),
+    "재고관리 시트 (향동·N배송)":    ("2026-07-21", "N배송 실시간 재고 동기화 오늘 10:30 정상"),
+    "F45 지점 공략 트래커":          ("2026-07-21", "어제~오늘 작업"),
+    "F45 파트너십 제안서 랜딩":      ("2026-07-20", "7/20 배포"),
+    "F45 신청 접수 시트":            ("2026-07-20", "전용 시트로 이전 완료 · 신규 접수 여부는 시트에서 확인"),
+    "F45 운영 가이드":               ("2026-07-21", "어제 정리"),
+    "REXTREME 2026 사전등록 랜딩":   ("2026-07-21", "디자인 최신본 라이브 반영 완료"),
+    "REXTREME 캠페인 링크 (아워심볼)": ("2026-07-18", "7/17~18에 53세션 · 이후 집계 확인 안 함"),
+    "다리마티 스토리 (쇼피파이 블로그)": ("2026-07-19", "르부르 글 작업 · 목록엔 아직 안 보임"),
+    "다리마티 공식몰":               ("", "상시 운영"),
+    "지운 업무일지":                 ("2026-07-12", "데이터가 비어 있음 — 배포는 됐지만 아직 일지를 안 씀"),
+    "수업 출석 현황":                ("2026-07-09", "7/9 이후 손 안 댐"),
+    "칸반 보드":                     ("2026-07-06", "7/6 이후 방치 · 업무일지 보드와 겹침"),
+    "네이버 Biz Advisor":            ("", "Growth 데이터 받을 때마다"),
+    "스마트스토어 판매자센터":       ("", "상시"),
+    "메타 광고 관리자":              ("", "상시"),
+    "Klaviyo (신청자 세그먼트)":     ("2026-07-21", "신청자 6명(실제 2 + 테스트 3 + 계정 1)"),
+    "쇼피파이 관리자":               ("", "상시"),
+}
+
 for i, it in enumerate(ITEMS):
     it.setdefault("internal", False)
     it.setdefault("cmd", "")
+    it["last"], it["lastNote"] = LAST.get(it["title"], ("", ""))
     it["id"] = "i%02d" % i
     if it["internal"]:
         it["u"] = enc(it["url"])
@@ -320,24 +349,48 @@ h1{font-size:21px;margin:0;letter-spacing:-.02em;font-weight:750}
 .chip[aria-pressed=true]{background:var(--chipOn);color:var(--chipOnFg);border-color:var(--chipOn)}
 .chip .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
 
-.count{color:var(--dim);font-size:12.5px;padding:12px 2px 6px}
+.count{color:var(--dim);font-size:12.5px;padding:12px 2px 6px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sortbtn{border:1px solid var(--line);background:var(--card);color:var(--dim);
+  border-radius:999px;padding:5px 12px;font-size:12.5px;font-family:inherit;cursor:pointer;font-weight:600}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:14px 15px;margin-bottom:10px;box-shadow:var(--shadow);
-  position:relative;overflow:hidden}
-.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,transparent)}
-.chead{display:flex;align-items:flex-start;gap:9px}
-.ct{font-size:16.5px;font-weight:700;letter-spacing:-.02em;margin:0;flex:1;min-width:0}
-.badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+  margin-bottom:8px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,transparent);z-index:1}
+.card.open{border-color:var(--dim)}
+
+/* 접힌 줄 — 제목 위주 */
+.row{width:100%;display:flex;align-items:center;gap:10px;
+  padding:15px 13px 15px 16px;background:none;border:0;cursor:pointer;
+  font-family:inherit;color:var(--fg);text-align:left}
+.row .rdot{flex:0 0 auto;width:8px;height:8px;border-radius:50%}
+.rt{flex:1;min-width:0;font-size:15.5px;font-weight:680;letter-spacing:-.02em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rmark{flex:0 0 auto;font-size:12px}
+.rago{flex:0 0 auto;font-size:11.5px;color:var(--dim);font-weight:600;
+  background:var(--chip);padding:3px 8px;border-radius:6px;white-space:nowrap}
+.rago.fresh{color:var(--ok)}
+.rago.stale{opacity:.55}
+.caret{flex:0 0 auto;color:var(--dim);font-size:12px;transition:transform .18s;transform:rotate(0)}
+.card.open .caret{transform:rotate(90deg)}
+
+/* 펼친 내용 */
+.body{padding:0 15px 15px 16px;border-top:1px solid var(--line);margin-top:-1px;padding-top:13px}
+.body[hidden]{display:none}
+.badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:0}
 .b{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--chip);color:var(--dim);
   letter-spacing:.01em;white-space:nowrap}
 .b.cat{color:#fff}
 .b.pc{background:rgba(217,119,6,.14);color:var(--warn)}
 .b.warn{background:rgba(217,119,6,.14);color:var(--warn)}
 .b.old{background:var(--chip);color:var(--old)}
+.b.empty{background:var(--chip);color:var(--old)}
 .b.lock{background:var(--chip);color:var(--dim)}
 .purpose{color:var(--fg);font-size:14px;margin:9px 0 0;opacity:.88}
 .meta{color:var(--dim);font-size:12.5px;margin-top:7px;line-height:1.45}
+.lastline{margin-top:9px;font-size:12.5px;color:var(--dim);
+  background:var(--chip);border-radius:8px;padding:8px 11px;line-height:1.45}
+.lastline b{color:var(--fg);font-weight:650}
 .owner{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--dim);
   border:1px dashed var(--line);border-radius:999px;padding:2px 9px;cursor:pointer;background:none;
   font-family:inherit;margin-top:9px}
@@ -378,7 +431,7 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 <div class="wrap">
 <header>
   <h1>다리마티 허브</h1>
-  <div class="sub">우리가 만든 페이지 전부 · 한 곳에서</div>
+  <div class="sub">제목을 누르면 상세와 접속 버튼이 열려요</div>
   <div class="topbtns">
     <button class="iconbtn" id="lockBtn" title="내부 링크 잠금 해제">🔒</button>
     <button class="iconbtn" id="themeBtn" title="밝게/어둡게">◐</button>
@@ -394,10 +447,11 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
   <div class="chips" id="chips"></div>
 </div>
 
-<div class="count" id="count"></div>
+<div class="count"><span id="count"></span><button class="sortbtn" id="sortBtn">분류순</button></div>
 <div id="list"></div>
 
 <footer>
+  오른쪽 날짜 = 마지막으로 움직인 때 · ⚠️ 점검 필요 · ○ 아직 안 씀<br>
   🔒 표시는 내부 링크 — 우상단 자물쇠에 PIN을 넣으면 열려요.<br>
   수정이 필요하면 클로드에게 “허브에 ○○ 추가해줘”라고 말하면 됩니다.
 </footer>
@@ -451,27 +505,47 @@ const KIND = {
   admin:{label:'관리자',   cls:''},
 };
 const STATUS = {
-  live:{label:'', cls:''},
-  warn:{label:'점검 필요', cls:'warn'},
-  old: {label:'정리 대상', cls:'old'},
+  live: {label:'', cls:'', mark:''},
+  warn: {label:'점검 필요', cls:'warn', mark:'⚠️'},
+  empty:{label:'아직 안 씀', cls:'empty', mark:'○'},
+  old:  {label:'정리 대상', cls:'old', mark:'○'},
 };
+
+/* 마지막으로 움직인 날 → "오늘 / 3일 전 / 2주 전" */
+function ago(iso){
+  if(!iso) return {txt:'상시', cls:'', days:-1};
+  const d = Math.floor((Date.now() - new Date(iso+'T12:00:00').getTime()) / 86400000);
+  let txt;
+  if(d <= 0) txt = '오늘';
+  else if(d === 1) txt = '어제';
+  else if(d < 7) txt = d + '일 전';
+  else if(d < 31) txt = Math.floor(d/7) + '주 전';
+  else txt = Math.floor(d/30) + '개월 전';
+  return {txt, cls: d <= 2 ? 'fresh' : (d >= 14 ? 'stale' : ''), days:d};
+}
 const catOf = k => DATA.cats.find(c => c.k === k) || {label:k, color:'#888'};
 
 const isPhone = !matchMedia('(min-width: 900px)').matches
   && /iPhone|iPad|Android/i.test(navigator.userAgent);
 
-let filter = 'all', query = '';
+let filter = 'all', query = '', sortRecent = false, openId = null;
 
 /* ── 렌더 ──────────────────────────────────── */
 function render(){
   const q = query.trim().toLowerCase();
-  const items = DATA.items.filter(it => {
+  let items = DATA.items.filter(it => {
     if(filter !== 'all' && it.cat !== filter) return false;
     if(!q) return true;
     const owner = store.owners?.[it.id] ?? it.owner;
-    return (it.title+' '+it.purpose+' '+it.meta+' '+it.tags+' '+owner+' '+catOf(it.cat).label)
+    return (it.title+' '+it.purpose+' '+it.meta+' '+it.tags+' '+owner+' '+catOf(it.cat).label+' '+it.lastNote)
       .toLowerCase().includes(q);
   });
+
+  if(sortRecent){
+    /* 최근 움직인 순. '상시'(날짜 없음)는 맨 뒤로 */
+    items = items.slice().sort((a,b) =>
+      (b.last || '0').localeCompare(a.last || '0'));
+  }
 
   document.getElementById('count').textContent =
     q || filter !== 'all' ? items.length + '개' : '전체 ' + items.length + '개';
@@ -485,7 +559,22 @@ function render(){
 }
 
 function card(it){
-  const c = catOf(it.cat), k = KIND[it.kind], st = STATUS[it.status];
+  const c = catOf(it.cat), st = STATUS[it.status], a = ago(it.last);
+  const open = openId === it.id;
+  return `<div class="card${open ? ' open' : ''}" style="--accent:${c.color}">
+    <button class="row" data-open="${it.id}" aria-expanded="${open}">
+      <span class="rdot" style="background:${c.color}"></span>
+      <span class="rt">${it.title}</span>
+      ${st.mark ? `<span class="rmark">${st.mark}</span>` : ''}
+      <span class="rago ${a.cls}">${a.txt}</span>
+      <span class="caret">▶</span>
+    </button>
+    <div class="body"${open ? '' : ' hidden'}>${open ? detail(it) : ''}</div>
+  </div>`;
+}
+
+function detail(it){
+  const c = catOf(it.cat), k = KIND[it.kind], st = STATUS[it.status], a = ago(it.last);
   const owner = store.owners?.[it.id] ?? it.owner;
   const locked = it.internal && !unlocked();
   const url = it.internal ? (locked ? '' : dec(it.u, PIN)) : it.url;
@@ -509,14 +598,12 @@ function card(it){
     if(it.kind === 'pc') action = `<div class="pcnote">맥에서만 열려요 · 터미널 <code>${it.cmd}</code></div>` + action;
   }
 
-  return `<div class="card" style="--accent:${c.color}">
-    <div class="chead"><h2 class="ct">${it.title}</h2></div>
-    <div class="badges">${badges}</div>
+  return `<div class="badges">${badges}</div>
     <p class="purpose">${it.purpose}</p>
     ${it.meta ? `<div class="meta">${it.meta}</div>` : ''}
+    ${it.lastNote ? `<div class="lastline"><b>최근 ${a.txt}</b> · ${it.lastNote}</div>` : ''}
     <button class="owner" data-owner="${it.id}">👤 ${esc(owner)}</button>
-    ${action}
-  </div>`;
+    ${action}`;
 }
 function esc(s){ return String(s||'').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 
@@ -542,6 +629,12 @@ qEl.addEventListener('input', () => {
   if(query.trim() && filter !== 'all'){ filter = 'all'; setChip('all'); }  /* 검색은 항상 전체에서 */
   render();
 });
+document.getElementById('sortBtn').addEventListener('click', e => {
+  sortRecent = !sortRecent;
+  e.target.textContent = sortRecent ? '최근순' : '분류순';
+  render();
+});
+
 function setChip(cat){
   document.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.cat === cat));
 }
@@ -549,6 +642,18 @@ document.getElementById('clr').addEventListener('click', () => { qEl.value=''; q
 
 /* ── 카드 액션 ────────────────────────────── */
 document.getElementById('list').addEventListener('click', async e => {
+  const row = e.target.closest('[data-open]');
+  if(row){
+    const id = row.dataset.open;
+    openId = (openId === id) ? null : id;   /* 한 번에 하나만 펼침 */
+    render();
+    if(openId){
+      const el = document.querySelector('.card.open');
+      const top = el.getBoundingClientRect().top + scrollY - 130;
+      if(el.getBoundingClientRect().top < 90) scrollTo({top, behavior:'smooth'});
+    }
+    return;
+  }
   const cp = e.target.closest('[data-copy]');
   if(cp){
     try{ await navigator.clipboard.writeText(cp.dataset.copy); toast('복사했어요'); }
