@@ -26,7 +26,6 @@ CATS = [
     ("sales", "판매·재고", "#eb6834"),
     ("f45", "F45", "#7a5af5"),
     ("brand", "브랜드 웹", "#0f9d76"),
-    ("work", "업무관리", "#d4a017"),
     ("data", "데이터·도구", "#6b7280"),
 ]
 
@@ -34,23 +33,23 @@ CATS = [
 ITEMS = [
     # ── 광고·성장 ──────────────────────────────────────────
     dict(
-        cat="growth", kind="pc", status="live",
+        cat="growth", kind="web", status="live",
         title="네이버 Growth 대시보드",
         purpose="스마트스토어 주간 성장 리포트. 매출·유입·검색어·채널·상품·퍼널 9개 탭 + 규칙기반 자동 인사이트(32건)와 특이사항 트래커.",
-        url="http://localhost:8898/dashboard.html",
+        url="https://company-dari.github.io/darimati-dash/growth/",
         cmd="growth",
         owner="지운",
-        meta="~/naver-growth · Biz Advisor 엑셀을 Downloads에 두고 실행하면 자동 취합",
+        meta="폰에서도 열림(PIN 필요) · 읽기 전용 스냅샷 · 새 데이터는 맥에서 growth 실행",
         tags="네이버 스마트스토어 growth 리포트 매출 유입 검색어 퍼널 인사이트 bizadvisor",
     ),
     dict(
-        cat="growth", kind="pc", status="warn",
+        cat="growth", kind="web", status="live",
         title="메타 광고 대시보드",
         purpose="페이스북·인스타 광고 성과 요약. 광고비·노출·클릭·CTR·CPC·도달 KPI와 일자별 추세, 캠페인별 표.",
-        url="http://localhost:8899/dashboard.html",
+        url="https://company-dari.github.io/darimati-dash/ads/",
         cmd="ads",
         owner="지운",
-        meta="~/fb-ads-dashboard · 매일 08시 자동수집 cron이 멈춰 있어 점검 필요",
+        meta="폰에서도 열림(PIN 필요) · 매일 08:10 자동 수집·배포",
         tags="메타 페이스북 광고 fb ads 대시보드 kpi cpc ctr 광고비",
     ),
     dict(
@@ -60,17 +59,17 @@ ITEMS = [
         url="http://localhost:8899/log.html",
         cmd="ads",
         owner="지운",
-        meta="~/fb-ads-dashboard/log.html · ads 실행하면 같이 뜸",
+        meta="기록을 저장할 서버가 필요해 맥에서만 씀 · ads 실행하면 같이 뜸",
         tags="광고일지 로그 가설 회고 캠페인 기록 log",
     ),
     dict(
-        cat="growth", kind="pc", status="live",
+        cat="growth", kind="web", status="live",
         title="UTM·광고명 생성기",
         purpose="캠페인명·그룹명·소재명 규칙과 nt_ 파라미터 URL을 한 번에 생성. 구글시트로 하던 작업 대체.",
-        url="http://localhost:8899/utm-builder.html",
+        url="https://company-dari.github.io/darimati-dash/utm/",
         cmd="ads",
         owner="지운",
-        meta="네이버는 utm_이 아니라 nt_만 읽음 — 둘 다 붙이는 게 안전",
+        meta="폰에서 바로 사용(잠금 없음) · 네이버는 utm_이 아니라 nt_만 읽음 — 둘 다 붙이는 게 안전",
         tags="utm nt 파라미터 생성기 캠페인명 소재명 링크",
     ),
     # ── 판매·재고 ──────────────────────────────────────────
@@ -81,7 +80,7 @@ ITEMS = [
         url="file:///Users/darimati/sales-order-sync/index.html",
         cmd="open ~/sales-order-sync/index.html",
         owner="지운",
-        meta="~/sales-order-sync · 네이버 주문은 매일 09:50·13:50 자동수집",
+        meta="고객 이름·전화·주소가 있어 웹에 안 올림 · 주문은 매일 09:50·13:50 자동수집",
         tags="발주 주문 송장 한진 출고 네이버 카카오 토스 sales order sync",
     ),
     dict(
@@ -158,43 +157,6 @@ ITEMS = [
         meta="새 글은 '블로그→쇼피파이 스토리' 스킬로 진행",
         tags="스토리 블로그 쇼피파이 콘텐츠 르부르 louvre hyrox",
     ),
-    dict(
-        cat="brand", kind="web", status="live",
-        title="다리마티 공식몰",
-        purpose="쇼피파이 자사몰 홈. 메타·구글 픽셀이 붙어 있어 방문자가 광고 모수로 쌓이는 본진.",
-        url="https://www.darimati.us",
-        owner="지운",
-        meta="스토어 핸들 e3zct1-h7",
-        tags="쇼피파이 자사몰 홈페이지 darimati shopify 스토어",
-    ),
-    # ── 업무관리 ──────────────────────────────────────────
-    dict(
-        cat="work", kind="web", status="empty",
-        title="지운 업무일지",
-        purpose="칸반 보드·오늘 회고·주간 회고·AI 인사이트를 한 곳에서. 기기 간 자동 동기화되고 마크다운으로 내보낼 수 있음.",
-        url="https://company-dari.github.io/jiwoon-worklog/",
-        owner="지운",
-        meta="☁️ 버튼으로 GitHub 토큰 연결하면 폰·맥 데이터가 같이 감",
-        tags="업무일지 칸반 회고 일정 할일 인사이트 지운 worklog",
-    ),
-    dict(
-        cat="work", kind="web", status="live",
-        title="수업 출석 현황",
-        purpose="수업 출석·연락처를 모바일에서 확인하는 화면.",
-        url="https://company-dari.github.io/attendance-web/",
-        owner="지운",
-        meta="화면만 공개 · 실제 데이터는 비공개 repo(class-attendance)에 있음",
-        tags="출석 수업 연락처 attendance 모바일",
-    ),
-    dict(
-        cat="work", kind="web", status="old",
-        title="칸반 보드",
-        purpose="따로 만들어 둔 칸반 보드. 지금은 업무일지 안 보드를 주로 쓰는 중이라 용도 정리가 필요.",
-        url="https://company-dari.github.io/kanban-board/",
-        owner="지운",
-        meta="용도 미확인 — 계속 쓸지 정리할지 판단 필요",
-        tags="칸반 보드 kanban 할일",
-    ),
     # ── 데이터·도구 ──────────────────────────────────────
     dict(
         cat="data", kind="admin", status="live", internal=True,
@@ -247,10 +209,10 @@ ITEMS = [
 # 마지막으로 움직인 날 + 실제 상태. 2026-07-21 실측(git 커밋일·파일 수정시각·자동화 로그).
 # last="" 이면 '상시'(우리가 만든 게 아니라 계속 쓰는 외부 서비스).
 LAST = {
-    "네이버 Growth 대시보드":       ("2026-07-21", "오늘도 손보는 중 · 데이터는 7/20까지 들어와 있음"),
-    "메타 광고 대시보드":            ("2026-07-21", "데이터 7/20까지 · 매일 08시 자동수집은 아직 한 번도 안 돌았음(오늘 것도 수동 실행)"),
+    "네이버 Growth 대시보드":       ("2026-07-21", "폰용 웹 배포 완료 · 데이터는 7/20까지"),
+    "메타 광고 대시보드":            ("2026-07-21", "자동수집 고침(cron→launchd 08:10) · 수집+웹배포까지 실제 성공 확인"),
     "광고 일지":                     ("2026-07-16", "만든 뒤 기록 0건 — 아직 한 번도 안 씀"),
-    "UTM·광고명 생성기":             ("2026-07-17", "7/17 사용"),
+    "UTM·광고명 생성기":             ("2026-07-21", "폰용 웹 배포 완료"),
     "발주 취합 대시보드":            ("2026-07-21", "주문 자동수집은 오늘 09:55 정상 · 화면은 6/26 이후 안 열어봄"),
     "재고관리 시트 (향동·N배송)":    ("2026-07-21", "N배송 실시간 재고 동기화 오늘 10:30 정상"),
     "F45 지점 공략 트래커":          ("2026-07-21", "어제~오늘 작업"),
@@ -260,10 +222,6 @@ LAST = {
     "REXTREME 2026 사전등록 랜딩":   ("2026-07-21", "디자인 최신본 라이브 반영 완료"),
     "REXTREME 캠페인 링크 (아워심볼)": ("2026-07-18", "7/17~18에 53세션 · 이후 집계 확인 안 함"),
     "다리마티 스토리 (쇼피파이 블로그)": ("2026-07-19", "르부르 글 작업 · 목록엔 아직 안 보임"),
-    "다리마티 공식몰":               ("", "상시 운영"),
-    "지운 업무일지":                 ("2026-07-12", "데이터가 비어 있음 — 배포는 됐지만 아직 일지를 안 씀"),
-    "수업 출석 현황":                ("2026-07-09", "7/9 이후 손 안 댐"),
-    "칸반 보드":                     ("2026-07-06", "7/6 이후 방치 · 업무일지 보드와 겹침"),
     "네이버 Biz Advisor":            ("", "Growth 데이터 받을 때마다"),
     "스마트스토어 판매자센터":       ("", "상시"),
     "메타 광고 관리자":              ("", "상시"),
