@@ -1,0 +1,627 @@
+# -*- coding: utf-8 -*-
+"""다리마티 허브 index.html 빌드. 내부(internal) 링크는 PIN으로 XOR 암호화."""
+import base64, json, io, os, sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+# PIN은 저장소에 커밋하지 않는다(공개 repo이므로). pin.txt는 .gitignore 처리됨.
+PIN = os.environ.get("HUB_PIN", "").strip()
+if not PIN:
+    try:
+        with io.open(os.path.join(HERE, "pin.txt"), encoding="utf-8") as f:
+            PIN = f.read().strip()
+    except IOError:
+        sys.exit("PIN이 없습니다. pin.txt를 만들거나 HUB_PIN 환경변수를 설정하세요.")
+
+def enc(s: str, pin: str = PIN) -> str:
+    b = s.encode("utf-8")
+    p = pin.encode("utf-8")
+    out = bytes(b[i] ^ p[i % len(p)] for i in range(len(b)))
+    return base64.b64encode(out).decode("ascii")
+
+# ─────────────────────────────────────────────────────────────
+# 카테고리
+CATS = [
+    ("growth", "광고·성장", "#2a78d6"),
+    ("sales", "판매·재고", "#eb6834"),
+    ("f45", "F45", "#7a5af5"),
+    ("brand", "브랜드 웹", "#0f9d76"),
+    ("work", "업무관리", "#d4a017"),
+    ("data", "데이터·도구", "#6b7280"),
+]
+
+# kind: web(어디서든) | pc(로컬 전용) | sheet(구글시트 등) | admin(관리자)
+ITEMS = [
+    # ── 광고·성장 ──────────────────────────────────────────
+    dict(
+        cat="growth", kind="pc", status="live",
+        title="네이버 Growth 대시보드",
+        purpose="스마트스토어 주간 성장 리포트. 매출·유입·검색어·채널·상품·퍼널 9개 탭 + 규칙기반 자동 인사이트(32건)와 특이사항 트래커.",
+        url="http://localhost:8898/dashboard.html",
+        cmd="growth",
+        owner="지운",
+        meta="~/naver-growth · Biz Advisor 엑셀을 Downloads에 두고 실행하면 자동 취합",
+        tags="네이버 스마트스토어 growth 리포트 매출 유입 검색어 퍼널 인사이트 bizadvisor",
+    ),
+    dict(
+        cat="growth", kind="pc", status="warn",
+        title="메타 광고 대시보드",
+        purpose="페이스북·인스타 광고 성과 요약. 광고비·노출·클릭·CTR·CPC·도달 KPI와 일자별 추세, 캠페인별 표.",
+        url="http://localhost:8899/dashboard.html",
+        cmd="ads",
+        owner="지운",
+        meta="~/fb-ads-dashboard · 매일 08시 자동수집 cron이 멈춰 있어 점검 필요",
+        tags="메타 페이스북 광고 fb ads 대시보드 kpi cpc ctr 광고비",
+    ),
+    dict(
+        cat="growth", kind="pc", status="live",
+        title="광고 일지",
+        purpose="캠페인마다 맥락 → 세팅·가설 → 결과 → 다음 광고 준비를 사슬로 기록. 실데이터와 자동 매칭돼 목표 달성 여부를 채점.",
+        url="http://localhost:8899/log.html",
+        cmd="ads",
+        owner="지운",
+        meta="~/fb-ads-dashboard/log.html · ads 실행하면 같이 뜸",
+        tags="광고일지 로그 가설 회고 캠페인 기록 log",
+    ),
+    dict(
+        cat="growth", kind="pc", status="live",
+        title="UTM·광고명 생성기",
+        purpose="캠페인명·그룹명·소재명 규칙과 nt_ 파라미터 URL을 한 번에 생성. 구글시트로 하던 작업 대체.",
+        url="http://localhost:8899/utm-builder.html",
+        cmd="ads",
+        owner="지운",
+        meta="네이버는 utm_이 아니라 nt_만 읽음 — 둘 다 붙이는 게 안전",
+        tags="utm nt 파라미터 생성기 캠페인명 소재명 링크",
+    ),
+    # ── 판매·재고 ──────────────────────────────────────────
+    dict(
+        cat="sales", kind="pc", status="live",
+        title="발주 취합 대시보드",
+        purpose="네이버·카카오·토스 발주를 한 곳에 모으고 한진 송장 양식을 자동 생성. 발주 → 송장완료 → 출고완료 3단계 관리.",
+        url="file:///Users/darimati/sales-order-sync/index.html",
+        cmd="open ~/sales-order-sync/index.html",
+        owner="지운",
+        meta="~/sales-order-sync · 네이버 주문은 매일 09:50·13:50 자동수집",
+        tags="발주 주문 송장 한진 출고 네이버 카카오 토스 sales order sync",
+    ),
+    dict(
+        cat="sales", kind="sheet", status="live", internal=True,
+        title="재고관리 시트 (향동·N배송)",
+        purpose="창고별 현재 재고. 상품마스터 기초재고 + 입출고기록으로 자동 계산되고, N배송은 네이버 실시간 재고가 매일 2회 덮어씀.",
+        url="https://docs.google.com/spreadsheets/d/18F4Zo3tNfgPGOq0tVPheNWKe8I56JiZ67X7gf7vhG6U/edit",
+        owner="지운",
+        meta="탭 3개: 상품마스터 / 입출고기록 / 현재재고(자동) · 매일 10:30·16:30 자동 동기화",
+        tags="재고 창고 향동 n배송 inventory 시트 스프레드시트 상품마스터",
+    ),
+    # ── F45 ────────────────────────────────────────────────
+    dict(
+        cat="f45", kind="web", status="live",
+        title="F45 지점 공략 트래커",
+        purpose="전국 67개 F45 지점 지도 + 협의 현황표. 지점별 담당자·연락처·트라이얼 매대·POP·미팅 진행을 체크하고 타깃 27곳을 관리.",
+        url="https://company-dari.github.io/darimati-f45-map/",
+        owner="지운",
+        meta="입력값은 브라우저에 저장(localStorage) — 기기 바꾸면 앱 안 '백업 내보내기'로 옮기기",
+        tags="f45 지점 지도 트래커 영업 협의 타깃 map 67",
+    ),
+    dict(
+        cat="f45", kind="web", status="live",
+        title="F45 파트너십 제안서 랜딩",
+        purpose="F45 코치진에게 보내는 한 장 스크롤 제안서. 하단 신청 폼이 전용 구글시트로 바로 접수됨.",
+        url="https://company-dari.github.io/darimati-f45-proposal/",
+        owner="지운",
+        meta="코치에게 링크로 전달하는 용도 · 신청은 아래 '접수 시트'에 쌓임",
+        tags="f45 제안서 랜딩 코치 파트너십 신청",
+    ),
+    dict(
+        cat="f45", kind="sheet", status="live", internal=True,
+        title="F45 신청 접수 시트",
+        purpose="제안서 랜딩에서 들어온 신청이 쌓이는 곳. 접수시각·지점명·담당자·연락처.",
+        url="https://docs.google.com/spreadsheets/d/1MrXPWAPOmOdqFJwuoT4Iod0B2yyNoOmqziv0x2O-qEM/edit",
+        owner="지운",
+        meta="재고시트에서 분리 완료(2026-07-20) · 슬랙 알림은 아직 미연결",
+        tags="f45 신청 접수 시트 폼 리드",
+    ),
+    dict(
+        cat="f45", kind="admin", status="live", internal=True,
+        title="F45 운영 가이드",
+        purpose="F45 관련 링크·세팅값·수정 방법을 한 장으로 정리한 내부 문서.",
+        url="https://claude.ai/code/artifact/56d61efa-9103-4e48-bfbb-c03f07d8a476",
+        owner="지운",
+        meta="claude.ai 로그인 필요",
+        tags="f45 가이드 운영 문서 세팅 인수인계",
+    ),
+    # ── 브랜드 웹 ──────────────────────────────────────────
+    dict(
+        cat="brand", kind="web", status="live",
+        title="REXTREME 2026 사전등록 랜딩",
+        purpose="8/1 수원컨벤션센터 부스 사전등록 페이지. 이름·전화·인스타를 받아 Klaviyo로 저장하고, 방문자는 메타 광고 모수로 쌓임.",
+        url="https://www.darimati.us/pages/rextreme-2026",
+        owner="지운",
+        meta="아워심볼 배너 전달용 링크는 아래 '캠페인 링크' 참고 · 검색 노출 차단(noindex)",
+        tags="rextreme 렉스트림 사전등록 랜딩 레디키트 부스 klaviyo 8월1일",
+    ),
+    dict(
+        cat="brand", kind="web", status="live",
+        title="REXTREME 캠페인 링크 (아워심볼)",
+        purpose="아워심볼 앱 배너에 넣는 UTM 링크. 이 링크로 들어온 유입만 따로 집계됨.",
+        url="https://www.darimati.us/pages/rextreme-2026?utm_source=oursymbol&utm_medium=popup&utm_campaign=rextreme2026",
+        owner="지운",
+        meta="7/17~18 기준 53세션 유입 · 배너 노출·CTR은 아워심볼에 요청 필요",
+        tags="rextreme utm 배너 아워심볼 캠페인 링크 유입",
+    ),
+    dict(
+        cat="brand", kind="web", status="live",
+        title="다리마티 스토리 (쇼피파이 블로그)",
+        purpose="브랜드 스토리 글 모음. 르부르·하이록스 등 콘텐츠를 전용 템플릿(dm-full)으로 발행.",
+        url="https://www.darimati.us/blogs/story",
+        owner="지운",
+        meta="새 글은 '블로그→쇼피파이 스토리' 스킬로 진행",
+        tags="스토리 블로그 쇼피파이 콘텐츠 르부르 louvre hyrox",
+    ),
+    dict(
+        cat="brand", kind="web", status="live",
+        title="다리마티 공식몰",
+        purpose="쇼피파이 자사몰 홈. 메타·구글 픽셀이 붙어 있어 방문자가 광고 모수로 쌓이는 본진.",
+        url="https://www.darimati.us",
+        owner="지운",
+        meta="스토어 핸들 e3zct1-h7",
+        tags="쇼피파이 자사몰 홈페이지 darimati shopify 스토어",
+    ),
+    # ── 업무관리 ──────────────────────────────────────────
+    dict(
+        cat="work", kind="web", status="live",
+        title="지운 업무일지",
+        purpose="칸반 보드·오늘 회고·주간 회고·AI 인사이트를 한 곳에서. 기기 간 자동 동기화되고 마크다운으로 내보낼 수 있음.",
+        url="https://company-dari.github.io/jiwoon-worklog/",
+        owner="지운",
+        meta="☁️ 버튼으로 GitHub 토큰 연결하면 폰·맥 데이터가 같이 감",
+        tags="업무일지 칸반 회고 일정 할일 인사이트 지운 worklog",
+    ),
+    dict(
+        cat="work", kind="web", status="live",
+        title="수업 출석 현황",
+        purpose="수업 출석·연락처를 모바일에서 확인하는 화면.",
+        url="https://company-dari.github.io/attendance-web/",
+        owner="지운",
+        meta="화면만 공개 · 실제 데이터는 비공개 repo(class-attendance)에 있음",
+        tags="출석 수업 연락처 attendance 모바일",
+    ),
+    dict(
+        cat="work", kind="web", status="old",
+        title="칸반 보드",
+        purpose="따로 만들어 둔 칸반 보드. 지금은 업무일지 안 보드를 주로 쓰는 중이라 용도 정리가 필요.",
+        url="https://company-dari.github.io/kanban-board/",
+        owner="지운",
+        meta="용도 미확인 — 계속 쓸지 정리할지 판단 필요",
+        tags="칸반 보드 kanban 할일",
+    ),
+    # ── 데이터·도구 ──────────────────────────────────────
+    dict(
+        cat="data", kind="admin", status="live", internal=True,
+        title="네이버 Biz Advisor",
+        purpose="유입·검색어·채널·쇼핑행동의 원천 데이터. Growth 대시보드에 넣을 엑셀을 여기서 '일별'로 받음.",
+        url="https://bizadvisor.naver.com",
+        owner="지운",
+        meta="⚠️ 다운로드할 때 반드시 '일별' 옵션 켜기 — 합계로 받으면 주간 분석 불가",
+        tags="네이버 bizadvisor 비즈어드바이저 통계 유입 검색어 다운로드",
+    ),
+    dict(
+        cat="data", kind="admin", status="live", internal=True,
+        title="스마트스토어 판매자센터",
+        purpose="주문·상품·정산 관리. 발주 자동수집이 막히면 여기 커머스API 앱의 허용 IP를 확인.",
+        url="https://sell.smartstore.naver.com",
+        owner="지운",
+        meta="맥 공인 IP가 바뀌면 커머스API센터에 재등록 필요",
+        tags="스마트스토어 판매자센터 네이버 주문 정산 api ip",
+    ),
+    dict(
+        cat="data", kind="admin", status="live", internal=True,
+        title="메타 광고 관리자",
+        purpose="캠페인 집행·모수(맞춤 타겟) 관리. 원화 계정 act_2158888001241986이 메인.",
+        url="https://adsmanager.facebook.com",
+        owner="지운",
+        meta="'REXTREME 방문자' 맞춤타겟 운영 중 · 픽셀 shopify-darimati 연결됨",
+        tags="메타 페이스북 광고관리자 ads manager 픽셀 모수 타겟",
+    ),
+    dict(
+        cat="data", kind="admin", status="live", internal=True,
+        title="Klaviyo (신청자 세그먼트)",
+        purpose="REXTREME 사전등록 신청자가 저장되는 곳. 명단을 뽑아 문자·알림톡 발송에 쓰고, 메타 광고 모수로도 내보냄.",
+        url="https://www.klaviyo.com/list/XkJ9Bq/rextreme-2026",
+        owner="지운",
+        meta="슬랙 알림은 MFA(2단계 인증) 설정이 막고 있음",
+        tags="klaviyo 클라비요 신청자 세그먼트 리드 rextreme 명단",
+    ),
+    dict(
+        cat="data", kind="admin", status="live", internal=True,
+        title="쇼피파이 관리자",
+        purpose="페이지·상품·테마 수정. REXTREME 랜딩 코드도 여기 테마 코드편집기에서 붙여넣음.",
+        url="https://admin.shopify.com/store/e3zct1-h7",
+        owner="지운",
+        meta="테마 커스터마이저는 자동화가 잘 안 됨 — 직접 클릭이 확실",
+        tags="쇼피파이 shopify 관리자 admin 테마 페이지 상품",
+    ),
+]
+
+for i, it in enumerate(ITEMS):
+    it.setdefault("internal", False)
+    it.setdefault("cmd", "")
+    it["id"] = "i%02d" % i
+    if it["internal"]:
+        it["u"] = enc(it["url"])
+        it["url"] = ""
+    else:
+        it["u"] = ""
+
+DATA = dict(
+    cats=[dict(k=k, label=l, color=c) for k, l, c in CATS],
+    items=ITEMS,
+    check=enc("OK"),
+)
+
+HTML = """<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>다리마티 허브</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme:light)">
+<meta name="theme-color" content="#0e1013" media="(prefers-color-scheme:dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="다리마티 허브">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧭</text></svg>">
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#f6f7f9; --card:#fff; --fg:#14161a; --dim:#666e7a; --line:#e3e6ea;
+  --chip:#eef0f3; --chipOn:#14161a; --chipOnFg:#fff; --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.04);
+  --ok:#0f9d76; --warn:#d97706; --old:#8b8f96;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e1013; --card:#171a1f; --fg:#e9ecf1; --dim:#98a0ad; --line:#262b33;
+  --chip:#222831; --chipOn:#e9ecf1; --chipOnFg:#14161a; --shadow:0 1px 2px rgba(0,0,0,.3);
+  --ok:#34d399; --warn:#fbbf24; --old:#6b727d;
+}}
+:root[data-theme=light]{--bg:#f6f7f9;--card:#fff;--fg:#14161a;--dim:#666e7a;--line:#e3e6ea;--chip:#eef0f3;--chipOn:#14161a;--chipOnFg:#fff;--ok:#0f9d76;--warn:#d97706;--old:#8b8f96}
+:root[data-theme=dark]{--bg:#0e1013;--card:#171a1f;--fg:#e9ecf1;--dim:#98a0ad;--line:#262b33;--chip:#222831;--chipOn:#e9ecf1;--chipOnFg:#14161a;--ok:#34d399;--warn:#fbbf24;--old:#6b727d}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;
+  -webkit-text-size-adjust:100%;line-height:1.5}
+.wrap{max-width:760px;margin:0 auto;padding:0 14px 72px}
+
+header{padding:22px 0 12px}
+h1{font-size:21px;margin:0;letter-spacing:-.02em;font-weight:750}
+.sub{color:var(--dim);font-size:13px;margin-top:5px}
+
+.sticky{position:sticky;top:0;z-index:20;background:var(--bg);
+  padding:8px 0 6px;margin:0 -14px;padding-left:14px;padding-right:14px;
+  border-bottom:1px solid transparent;transition:border-color .2s}
+.sticky.stuck{border-color:var(--line)}
+.searchbox{position:relative}
+.searchbox input{width:100%;padding:12px 40px 12px 40px;font-size:16px;
+  border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg);
+  outline:none;-webkit-appearance:none}
+.searchbox input:focus{border-color:var(--dim)}
+.searchbox input::-webkit-search-cancel-button,
+.searchbox input::-webkit-search-decoration{-webkit-appearance:none;display:none}
+.searchbox .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:15px}
+.searchbox .clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  border:0;background:none;color:var(--dim);font-size:19px;padding:6px 8px;cursor:pointer;display:none}
+.searchbox input:not(:placeholder-shown)~.clr{display:block}
+
+.chips{display:flex;gap:7px;overflow-x:auto;padding:9px 0 3px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--chip);color:var(--fg);
+  padding:7px 13px;border-radius:999px;font-size:13.5px;cursor:pointer;white-space:nowrap;
+  font-weight:600;letter-spacing:-.01em}
+.chip[aria-pressed=true]{background:var(--chipOn);color:var(--chipOnFg);border-color:var(--chipOn)}
+.chip .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+
+.count{color:var(--dim);font-size:12.5px;padding:12px 2px 6px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:14px 15px;margin-bottom:10px;box-shadow:var(--shadow);
+  position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,transparent)}
+.chead{display:flex;align-items:flex-start;gap:9px}
+.ct{font-size:16.5px;font-weight:700;letter-spacing:-.02em;margin:0;flex:1;min-width:0}
+.badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.b{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--chip);color:var(--dim);
+  letter-spacing:.01em;white-space:nowrap}
+.b.cat{color:#fff}
+.b.pc{background:rgba(217,119,6,.14);color:var(--warn)}
+.b.warn{background:rgba(217,119,6,.14);color:var(--warn)}
+.b.old{background:var(--chip);color:var(--old)}
+.b.lock{background:var(--chip);color:var(--dim)}
+.purpose{color:var(--fg);font-size:14px;margin:9px 0 0;opacity:.88}
+.meta{color:var(--dim);font-size:12.5px;margin-top:7px;line-height:1.45}
+.owner{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--dim);
+  border:1px dashed var(--line);border-radius:999px;padding:2px 9px;cursor:pointer;background:none;
+  font-family:inherit;margin-top:9px}
+.owner:hover{border-style:solid;color:var(--fg)}
+.acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{flex:1;min-width:120px;text-align:center;text-decoration:none;
+  padding:11px 12px;border-radius:10px;font-size:14px;font-weight:650;
+  background:var(--chipOn);color:var(--chipOnFg);border:1px solid var(--chipOn);cursor:pointer;
+  font-family:inherit;display:block}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line);flex:0 0 auto;min-width:0}
+.btn:active{opacity:.7}
+.pcnote{margin-top:11px;background:var(--chip);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--dim)}
+.pcnote code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--fg);
+  background:var(--card);padding:2px 7px;border-radius:5px;border:1px solid var(--line)}
+.empty{text-align:center;color:var(--dim);padding:46px 10px;font-size:14px}
+footer{color:var(--dim);font-size:12px;text-align:center;padding:26px 10px 10px;line-height:1.7}
+.topbtns{position:absolute;right:14px;top:20px;display:flex;gap:6px}
+.iconbtn{border:1px solid var(--line);background:var(--card);color:var(--dim);
+  border-radius:9px;width:34px;height:34px;font-size:15px;cursor:pointer;font-family:inherit}
+header{position:relative}
+dialog{border:0;border-radius:16px;padding:0;background:var(--card);color:var(--fg);
+  max-width:340px;width:calc(100% - 40px);box-shadow:0 20px 50px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg{padding:20px}
+.dlg h3{margin:0 0 8px;font-size:16px}
+.dlg p{margin:0 0 14px;font-size:13.5px;color:var(--dim);line-height:1.55}
+.dlg input{width:100%;padding:11px 13px;font-size:16px;border:1px solid var(--line);
+  border-radius:10px;background:var(--bg);color:var(--fg);outline:none;margin-bottom:10px}
+.dlg .row{display:flex;gap:8px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+  background:var(--chipOn);color:var(--chipOnFg);padding:11px 18px;border-radius:999px;
+  font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.22s;z-index:50}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <h1>다리마티 허브</h1>
+  <div class="sub">우리가 만든 페이지 전부 · 한 곳에서</div>
+  <div class="topbtns">
+    <button class="iconbtn" id="lockBtn" title="내부 링크 잠금 해제">🔒</button>
+    <button class="iconbtn" id="themeBtn" title="밝게/어둡게">◐</button>
+  </div>
+</header>
+
+<div class="sticky" id="sticky">
+  <div class="searchbox">
+    <span class="ico">🔍</span>
+    <input id="q" type="search" placeholder="이름·목적·태그로 검색" autocomplete="off" enterkeyhint="search">
+    <button class="clr" id="clr" aria-label="지우기">×</button>
+  </div>
+  <div class="chips" id="chips"></div>
+</div>
+
+<div class="count" id="count"></div>
+<div id="list"></div>
+
+<footer>
+  🔒 표시는 내부 링크 — 우상단 자물쇠에 PIN을 넣으면 열려요.<br>
+  수정이 필요하면 클로드에게 “허브에 ○○ 추가해줘”라고 말하면 됩니다.
+</footer>
+</div>
+
+<dialog id="pinDlg"><div class="dlg">
+  <h3>내부 링크 잠금 해제</h3>
+  <p>구글시트·관리자 페이지 링크는 PIN을 넣어야 열립니다. 한 번 넣으면 이 기기에 기억돼요.</p>
+  <input id="pinInput" type="password" inputmode="text" placeholder="PIN" autocomplete="off">
+  <div class="row">
+    <button class="btn ghost" style="flex:1" id="pinCancel">닫기</button>
+    <button class="btn" style="flex:1" id="pinOk">확인</button>
+  </div>
+</div></dialog>
+
+<dialog id="ownerDlg"><div class="dlg">
+  <h3>담당자</h3>
+  <p>이 페이지를 챙기는 사람을 적어두세요. 이 기기에 저장됩니다.</p>
+  <input id="ownerInput" type="text" placeholder="예: 지운" autocomplete="off">
+  <div class="row">
+    <button class="btn ghost" style="flex:1" id="ownerCancel">닫기</button>
+    <button class="btn" style="flex:1" id="ownerOk">저장</button>
+  </div>
+</div></dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DATA = __DATA__;
+const LS = 'darimati_hub_v1';
+const store = JSON.parse(localStorage.getItem(LS) || '{}');
+const save = () => localStorage.setItem(LS, JSON.stringify(store));
+
+/* ── PIN 복호화 ─────────────────────────────── */
+function dec(b64, pin){
+  try{
+    const bin = atob(b64); const p = new TextEncoder().encode(pin);
+    const out = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i) ^ p[i % p.length];
+    return new TextDecoder().decode(out);
+  }catch(e){ return ''; }
+}
+let PIN = store.pin || '';
+const unlocked = () => PIN && dec(DATA.check, PIN) === 'OK';
+
+/* ── 상태 ──────────────────────────────────── */
+const KIND = {
+  web:  {label:'어디서든', cls:''},
+  pc:   {label:'PC 전용',  cls:'pc'},
+  sheet:{label:'구글시트', cls:''},
+  admin:{label:'관리자',   cls:''},
+};
+const STATUS = {
+  live:{label:'', cls:''},
+  warn:{label:'점검 필요', cls:'warn'},
+  old: {label:'정리 대상', cls:'old'},
+};
+const catOf = k => DATA.cats.find(c => c.k === k) || {label:k, color:'#888'};
+
+const isPhone = !matchMedia('(min-width: 900px)').matches
+  && /iPhone|iPad|Android/i.test(navigator.userAgent);
+
+let filter = 'all', query = '';
+
+/* ── 렌더 ──────────────────────────────────── */
+function render(){
+  const q = query.trim().toLowerCase();
+  const items = DATA.items.filter(it => {
+    if(filter !== 'all' && it.cat !== filter) return false;
+    if(!q) return true;
+    const owner = store.owners?.[it.id] ?? it.owner;
+    return (it.title+' '+it.purpose+' '+it.meta+' '+it.tags+' '+owner+' '+catOf(it.cat).label)
+      .toLowerCase().includes(q);
+  });
+
+  document.getElementById('count').textContent =
+    q || filter !== 'all' ? items.length + '개' : '전체 ' + items.length + '개';
+
+  const list = document.getElementById('list');
+  if(!items.length){
+    list.innerHTML = '<div class="empty">찾는 페이지가 없어요.<br>다른 말로 검색해 보세요.</div>';
+    return;
+  }
+  list.innerHTML = items.map(card).join('');
+}
+
+function card(it){
+  const c = catOf(it.cat), k = KIND[it.kind], st = STATUS[it.status];
+  const owner = store.owners?.[it.id] ?? it.owner;
+  const locked = it.internal && !unlocked();
+  const url = it.internal ? (locked ? '' : dec(it.u, PIN)) : it.url;
+
+  let badges = `<span class="b cat" style="background:${c.color}">${c.label}</span>`;
+  if(k.label) badges += `<span class="b ${k.cls}">${k.label}</span>`;
+  if(st.label) badges += `<span class="b ${st.cls}">${st.label}</span>`;
+  if(it.internal) badges += `<span class="b lock">🔒 내부</span>`;
+
+  let action;
+  if(locked){
+    action = `<div class="acts"><button class="btn ghost" style="flex:1" data-lock="1">🔒 PIN 넣고 열기</button></div>`;
+  } else if(it.kind === 'pc' && isPhone){
+    action = `<div class="pcnote">폰에서는 안 열려요. 맥 터미널에서 <code>${it.cmd}</code> 실행하세요.
+      </div><div class="acts"><button class="btn ghost" style="flex:1" data-copy="${esc(it.cmd)}">명령어 복사</button></div>`;
+  } else {
+    action = `<div class="acts">
+      <a class="btn" href="${esc(url)}" target="_blank" rel="noopener">열기 ↗</a>
+      <button class="btn ghost" data-copy="${esc(url)}">링크 복사</button>
+    </div>`;
+    if(it.kind === 'pc') action = `<div class="pcnote">맥에서만 열려요 · 터미널 <code>${it.cmd}</code></div>` + action;
+  }
+
+  return `<div class="card" style="--accent:${c.color}">
+    <div class="chead"><h2 class="ct">${it.title}</h2></div>
+    <div class="badges">${badges}</div>
+    <p class="purpose">${it.purpose}</p>
+    ${it.meta ? `<div class="meta">${it.meta}</div>` : ''}
+    <button class="owner" data-owner="${it.id}">👤 ${esc(owner)}</button>
+    ${action}
+  </div>`;
+}
+function esc(s){ return String(s||'').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+/* ── 칩 ───────────────────────────────────── */
+document.getElementById('chips').innerHTML =
+  [`<button class="chip" data-cat="all" aria-pressed="true">전체</button>`]
+  .concat(DATA.cats.map(c => {
+    const n = DATA.items.filter(i => i.cat === c.k).length;
+    return `<button class="chip" data-cat="${c.k}" aria-pressed="false"><span class="dot" style="background:${c.color}"></span>${c.label} ${n}</button>`;
+  })).join('');
+
+document.getElementById('chips').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if(!b) return;
+  filter = b.dataset.cat;
+  document.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x === b));
+  render();
+});
+
+/* ── 검색 ─────────────────────────────────── */
+const qEl = document.getElementById('q');
+qEl.addEventListener('input', () => {
+  query = qEl.value;
+  if(query.trim() && filter !== 'all'){ filter = 'all'; setChip('all'); }  /* 검색은 항상 전체에서 */
+  render();
+});
+function setChip(cat){
+  document.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.cat === cat));
+}
+document.getElementById('clr').addEventListener('click', () => { qEl.value=''; query=''; render(); qEl.focus(); });
+
+/* ── 카드 액션 ────────────────────────────── */
+document.getElementById('list').addEventListener('click', async e => {
+  const cp = e.target.closest('[data-copy]');
+  if(cp){
+    try{ await navigator.clipboard.writeText(cp.dataset.copy); toast('복사했어요'); }
+    catch(_){ toast('복사 실패 — 길게 눌러 복사하세요'); }
+    return;
+  }
+  if(e.target.closest('[data-lock]')){ openPin(); return; }
+  const ow = e.target.closest('[data-owner]');
+  if(ow){ openOwner(ow.dataset.owner); return; }
+});
+
+/* ── PIN 다이얼로그 ───────────────────────── */
+const pinDlg = document.getElementById('pinDlg'), pinInput = document.getElementById('pinInput');
+function openPin(){ pinInput.value=''; pinDlg.showModal(); setTimeout(()=>pinInput.focus(),50); }
+document.getElementById('lockBtn').addEventListener('click', () => {
+  if(unlocked()){ PIN=''; delete store.pin; save(); syncLock(); render(); toast('다시 잠갔어요'); }
+  else openPin();
+});
+document.getElementById('pinCancel').addEventListener('click', () => pinDlg.close());
+document.getElementById('pinOk').addEventListener('click', tryPin);
+pinInput.addEventListener('keydown', e => { if(e.key === 'Enter') tryPin(); });
+function tryPin(){
+  const v = pinInput.value.trim();
+  if(dec(DATA.check, v) === 'OK'){
+    PIN = v; store.pin = v; save(); pinDlg.close(); syncLock(); render(); toast('열렸어요');
+  } else { pinInput.value=''; pinInput.placeholder='PIN이 달라요'; }
+}
+function syncLock(){ document.getElementById('lockBtn').textContent = unlocked() ? '🔓' : '🔒'; }
+
+/* ── 담당자 ──────────────────────────────── */
+const ownerDlg = document.getElementById('ownerDlg'), ownerInput = document.getElementById('ownerInput');
+let ownerId = null;
+function openOwner(id){
+  ownerId = id;
+  const it = DATA.items.find(x => x.id === id);
+  ownerInput.value = store.owners?.[id] ?? it.owner;
+  ownerDlg.showModal(); setTimeout(()=>ownerInput.select(),50);
+}
+document.getElementById('ownerCancel').addEventListener('click', () => ownerDlg.close());
+document.getElementById('ownerOk').addEventListener('click', saveOwner);
+ownerInput.addEventListener('keydown', e => { if(e.key === 'Enter') saveOwner(); });
+function saveOwner(){
+  store.owners = store.owners || {};
+  store.owners[ownerId] = ownerInput.value.trim() || '미지정';
+  save(); ownerDlg.close(); render();
+}
+
+/* ── 테마 ────────────────────────────────── */
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const cur = document.documentElement.dataset.theme
+    || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next; store.theme = next; save();
+});
+if(store.theme) document.documentElement.dataset.theme = store.theme;
+
+/* ── 기타 ────────────────────────────────── */
+function toast(m){
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('on');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('on'), 1600);
+}
+const sticky = document.getElementById('sticky');
+addEventListener('scroll', () => sticky.classList.toggle('stuck', scrollY > 70), {passive:true});
+
+syncLock(); render();
+</script>
+</body>
+</html>
+"""
+
+out = HTML.replace("__DATA__", json.dumps(DATA, ensure_ascii=False))
+dest = os.path.join(HERE, "index.html")
+with io.open(dest, "w", encoding="utf-8") as f:
+    f.write(out)
+print("wrote", dest, len(out), "bytes,", len(ITEMS), "items")
